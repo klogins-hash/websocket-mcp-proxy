@@ -287,9 +287,50 @@ class MCPProxyServer {
 
   async startWebSocketServer() {
     const port = this.config.proxy?.port || 8080;
-    const wss = new WebSocketServer({ port });
+    const host = this.config.proxy?.host || '0.0.0.0';
     
-    console.log(`WebSocket MCP Proxy Server listening on port ${port}`);
+    // Create HTTP server for health checks and WebSocket upgrade
+    const http = await import('http');
+    const server = http.createServer((req, res) => {
+      if (req.url === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          status: 'healthy',
+          servers: Array.from(this.mcpServers.keys()),
+          totalServers: this.mcpServers.size,
+          timestamp: new Date().toISOString()
+        }));
+      } else if (req.url === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(`
+          <html>
+            <head><title>WebSocket MCP Proxy</title></head>
+            <body>
+              <h1>WebSocket MCP Proxy Server</h1>
+              <p>Status: <strong>Running</strong></p>
+              <p>Active Servers: <strong>${this.mcpServers.size}</strong></p>
+              <p>WebSocket Endpoint: <code>wss://${req.headers.host}</code></p>
+              <p>Health Check: <a href="/health">/health</a></p>
+              <h3>Available Servers:</h3>
+              <ul>
+                ${Array.from(this.mcpServers.keys()).map(name => `<li>${name}</li>`).join('')}
+              </ul>
+            </body>
+          </html>
+        `);
+      } else {
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');
+      }
+    });
+    
+    const wss = new WebSocketServer({ server });
+    
+    server.listen(port, host, () => {
+      console.log(`WebSocket MCP Proxy Server listening on ${host}:${port}`);
+      console.log(`Health check available at: http://${host}:${port}/health`);
+      console.log(`WebSocket endpoint: ws://${host}:${port}`);
+    });
     
     wss.on('connection', (ws) => {
       const connectionId = uuidv4();
