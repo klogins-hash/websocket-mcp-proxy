@@ -1,0 +1,56 @@
+# Advanced WebSocket MCP Proxy Configuration
+# This example shows multiple servers with different capabilities
+
+proxy:
+  port: 8080
+  host: "0.0.0.0"  # Listen on all interfaces
+
+servers:
+  # File operations
+  - name: "files"
+    command: "npx"
+    args: ["@modelcontextprotocol/server-filesystem", "/home/user/documents"]
+    description: "Document filesystem access"
+    
+  # Git operations
+  - name: "git"
+    command: "npx"
+    args: ["@modelcontextprotocol/server-git", "--repository", "/home/user/projects"]
+    description: "Git repository operations"
+    
+  # Database operations
+  - name: "db"
+    command: "npx"
+    args: ["@modelcontextprotocol/server-sqlite", "--db-path", "/data/app.db"]
+    description: "SQLite database operations"
+    
+  # Web search
+  - name: "search"
+    command: "npx"
+    args: ["@modelcontextprotocol/server-brave-search"]
+    env:
+      BRAVE_API_KEY: "${BRAVE_API_KEY}"
+    description: "Web search capabilities"
+    
+  # Custom Python server
+  - name: "analytics"
+    command: "python"
+    args: ["-m", "analytics_mcp_server", "--port", "9001"]
+    env:
+      PYTHONPATH: "/opt/analytics-server"
+      DATA_PATH: "/data/analytics"
+    description: "Custom analytics server"
+    
+  # Memory/cache server
+  - name: "cache"
+    command: "node"
+    args: ["./custom-servers/memory-server.js"]
+    description: "In-memory cache operations"
+
+logging:
+  level: "debug"
+  format: "json"
+
+security:
+  allowedOrigins: ["http://localhost:3000", "https://myapp.com"]
+  # apiKey: "your-secret-api-key"  # Uncomment to enable API key auth

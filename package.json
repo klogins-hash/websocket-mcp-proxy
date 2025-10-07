@@ -1,0 +1,24 @@
+{
+  "name": "websocket-mcp-proxy",
+  "version": "1.0.0",
+  "description": "WebSocket MCP server with reverse proxy capabilities for hosting multiple MCP servers",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": ["mcp", "websocket", "reverse-proxy", "model-context-protocol"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "ws": "^8.18.0",
+    "uuid": "^10.0.0",
+    "yaml": "^2.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  }
+}

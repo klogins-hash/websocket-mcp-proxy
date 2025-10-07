@@ -1,0 +1,16 @@
+# Simple WebSocket MCP Proxy Configuration
+# This example shows a minimal setup with just a filesystem server
+
+proxy:
+  port: 8080
+  host: "localhost"
+
+servers:
+  # Simple filesystem server
+  - name: "fs"
+    command: "npx"
+    args: ["@modelcontextprotocol/server-filesystem", "./"]
+    description: "Local filesystem access"
+
+logging:
+  level: "info"
