@@ -1,0 +1,75 @@
+{
+  "name": "websocket-mcp-proxy",
+  "description": "WebSocket MCP Proxy Server - Host multiple MCP servers with reverse proxy capabilities",
+  "billing": {
+    "deploymentPlan": "nf-compute-10"
+  },
+  "deployment": {
+    "instances": 1,
+    "docker": {
+      "configType": "default"
+    },
+    "internal": {
+      "id": "websocket-mcp-proxy",
+      "branch": "main",
+      "projectType": "dockerfile",
+      "projectPath": "/",
+      "dockerfile": {
+        "buildEngine": "kaniko",
+        "dockerFilePath": "/Dockerfile",
+        "dockerWorkDir": "/",
+        "useCache": false
+      }
+    }
+  },
+  "runtimeEnvironment": {
+    "runtime": "docker"
+  },
+  "runtimeFiles": {},
+  "buildConfiguration": {
+    "pathIgnoreRules": [],
+    "isAllowList": false,
+    "ciIgnoreFlagsEnabled": false,
+    "dockerfilePath": "/Dockerfile",
+    "dockerBuildContext": "/",
+    "buildEngine": "kaniko"
+  },
+  "buildArguments": {},
+  "securityContext": {
+    "fsGroup": 1001
+  },
+  "vcsData": {
+    "projectUrl": "https://github.com/klogins-hash/websocket-mcp-proxy",
+    "projectType": "github",
+    "projectBranch": "main",
+    "accountLogin": "klogins-hash",
+    "projectName": "websocket-mcp-proxy"
+  },
+  "ports": [
+    {
+      "name": "ws",
+      "internalPort": 8080,
+      "public": true,
+      "protocol": "HTTP",
+      "security": {
+        "policies": [],
+        "credentials": []
+      },
+      "domains": [],
+      "disableNfDomain": false
+    }
+  ],
+  "persistentStorage": [],
+  "runtimeSource": {
+    "type": "build"
+  },
+  "disabledCI": false,
+  "buildSettings": {
+    "dockerfile": {
+      "buildEngine": "kaniko",
+      "dockerFilePath": "/Dockerfile",
+      "dockerWorkDir": "/",
+      "useCache": false
+    }
+  }
+}
