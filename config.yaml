@@ -7,21 +7,116 @@ proxy:
 
 # MCP servers to host and proxy
 servers:
-  # Example: Memory MCP server (works without external dependencies)
-  - name: "memory"
+  # Vapi AI Voice Platform
+  - name: "vapi"
     command: "npx"
-    args: ["@modelcontextprotocol/server-memory"]
+    args: ["-y", "@vapi-ai/mcp-server"]
     env:
-      NODE_ENV: "production"
-    description: "In-memory storage server"
+      VAPI_TOKEN: "${VAPI_TOKEN}"
+    description: "Integrates with Vapi's AI voice calling platform to manage voice assistants, phone numbers, and outbound calls"
     
-  # Example: File system MCP server (using /tmp for demo)
-  - name: "filesystem"
+  # Supabase Database
+  - name: "supabase"
     command: "npx"
-    args: ["@modelcontextprotocol/server-filesystem", "/tmp"]
+    args: ["-y", "@supabase/mcp-server-supabase", "--read-only", "--project-ref=${SUPABASE_PROJECT_REF}"]
     env:
-      NODE_ENV: "production"
-    description: "File system operations server"
+      SUPABASE_ACCESS_TOKEN: "${SUPABASE_ACCESS_TOKEN}"
+    description: "Supabase database integration with read-only access"
+    
+  # N8N Railway Integration
+  - name: "n8n-railway"
+    command: "npx"
+    args: ["mcp-remote", "https://czlonkowskin8n-mcp-railwaylatest-production-d469.up.railway.app/mcp"]
+    env:
+      Authorization: "Bearer ${N8N_RAILWAY_TOKEN}"
+    description: "N8N workflow automation via Railway deployment"
+    
+  # Linear Project Management
+  - name: "linear"
+    command: "npx"
+    args: ["-y", "mcp-remote", "https://mcp.linear.app/sse"]
+    env:
+      LINEAR_API_KEY: "${LINEAR_API_KEY}"
+    description: "Linear project management and issue tracking"
+    
+  # Railway Platform
+  - name: "railway"
+    command: "npx"
+    args: ["@railway/mcp-server"]
+    env:
+      RAILWAY_API_KEY: "${RAILWAY_API_KEY}"
+    description: "Railway platform deployment and management"
+    
+  # Cartesia AI Voice
+  - name: "cartesia"
+    command: "uvx"
+    args: ["cartesia-mcp"]
+    env:
+      CARTESIA_API_KEY: "${CARTESIA_API_KEY}"
+      OUTPUT_DIRECTORY: "/tmp/cartesia-output"
+    description: "Cartesia AI voice synthesis and processing"
+    
+  # Firecrawl Web Scraping
+  - name: "firecrawl"
+    command: "npx"
+    args: ["-y", "firecrawl-mcp"]
+    env:
+      FIRECRAWL_API_KEY: "${FIRECRAWL_API_KEY}"
+      FIRECRAWL_API_URL: "https://api.firecrawl.dev"
+      FIRECRAWL_RETRY_DELAY: "1000"
+      FIRECRAWL_RETRY_MAX_ATTEMPTS: "5"
+    description: "Web scraping and content extraction via Firecrawl"
+    
+  # Tavily Search
+  - name: "tavily"
+    command: "npx"
+    args: ["-y", "tavily-mcp@latest"]
+    env:
+      TAVILY_API_KEY: "${TAVILY_API_KEY}"
+    description: "AI-powered web search via Tavily"
+    
+  # OpenRouter AI Models
+  - name: "openrouter"
+    command: "npx"
+    args: ["-y", "@mcpservers/openrouterai"]
+    env:
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY}"
+      OPENROUTER_DEFAULT_MODEL: "anthropic/claude-3-5-sonnet"
+    description: "Access to multiple AI models via OpenRouter"
+    
+  # GitHub Integration
+  - name: "github"
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-github"]
+    env:
+      GITHUB_API_KEY: "${GITHUB_API_KEY}"
+    description: "GitHub repository and issue management"
+    
+  # HeyGen Video Generation
+  - name: "heygen"
+    command: "uvx"
+    args: ["heygen-mcp"]
+    env:
+      HEYGEN_API_KEY: "${HEYGEN_API_KEY}"
+    description: "AI video generation via HeyGen"
+    
+  # Mem0 Memory Management
+  - name: "mem0"
+    command: "npx"
+    args: ["-y", "mem0-mcp"]
+    env:
+      DATABASE_URL: "${DATABASE_URL}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY}"
+    description: "Persistent memory management with Mem0"
+    
+  # OpenMemory
+  - name: "openmemory"
+    command: "npx"
+    args: ["-y", "openmemory"]
+    env:
+      CLIENT_NAME: "windsurf"
+      OPENMEMORY_API_KEY: "${OPENMEMORY_API_KEY}"
+    description: "OpenMemory knowledge management system"
 
 # Logging configuration
 logging:
