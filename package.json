@@ -18,7 +18,8 @@
     "ws": "^8.18.0",
     "yaml": "^2.6.1",
     "uuid": "^11.0.3",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "eventsource": "^2.0.2"
   },
   "devDependencies": {
     "@types/node": "^20.0.0"

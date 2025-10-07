@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { ConfigValidator } from './config-validator.js';
+import { HttpTransport } from './http-transport.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -67,9 +68,26 @@ class MCPProxyServer {
   }
 
   async startMCPServer(serverConfig) {
-    const { name, command, args = [], env = {} } = serverConfig;
+    const { name, type = 'STDIO' } = serverConfig;
     
-    console.log(`Starting MCP server: ${name}`);
+    console.log(`Starting MCP server: ${name} (${type})`);
+    
+    try {
+      if (type === 'STDIO') {
+        return await this.startStdioServer(serverConfig);
+      } else if (type === 'SSE' || type === 'STREAMABLE_HTTP') {
+        return await this.startHttpServer(serverConfig);
+      } else {
+        throw new Error(`Unsupported server type: ${type}`);
+      }
+    } catch (error) {
+      console.error(`Failed to start MCP server ${name}:`, error);
+      throw error;
+    }
+  }
+
+  async startStdioServer(serverConfig) {
+    const { name, command, args = [], env = {} } = serverConfig;
     
     const childProcess = spawn(command, args, {
       env: { ...process.env, ...env },
@@ -90,11 +108,48 @@ class MCPProxyServer {
       server,
       transport,
       process: childProcess,
-      config: serverConfig
+      config: serverConfig,
+      type: 'STDIO'
     });
 
     childProcess.on('exit', (code) => {
       console.log(`MCP server ${name} exited with code ${code}`);
+      this.mcpServers.delete(name);
+    });
+
+    return server;
+  }
+
+  async startHttpServer(serverConfig) {
+    const { name } = serverConfig;
+    
+    const transport = new HttpTransport(serverConfig);
+    await transport.connect();
+
+    // Create a proxy server that handles HTTP/SSE communication
+    const server = {
+      name: `proxy-${name}`,
+      type: serverConfig.type,
+      transport,
+      
+      async request(request) {
+        return await transport.send(request);
+      }
+    };
+
+    this.mcpServers.set(name, {
+      server,
+      transport,
+      config: serverConfig,
+      type: serverConfig.type
+    });
+
+    transport.on('error', (error) => {
+      console.error(`HTTP transport error for ${name}:`, error);
+    });
+
+    transport.on('disconnect', () => {
+      console.log(`HTTP server ${name} disconnected`);
       this.mcpServers.delete(name);
     });
 
@@ -115,15 +170,30 @@ class MCPProxyServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       const allTools = [];
       
-      for (const [serverName, { server }] of this.mcpServers) {
+      for (const [serverName, { server, type }] of this.mcpServers) {
         try {
-          const response = await server.request(
-            { method: 'tools/list' },
-            ListToolsRequestSchema
-          );
+          let response;
+          
+          if (type === 'STDIO') {
+            response = await server.request(
+              { method: 'tools/list' },
+              ListToolsRequestSchema
+            );
+          } else {
+            // HTTP/SSE servers
+            response = await server.request({
+              jsonrpc: '2.0',
+              method: 'tools/list',
+              id: `list-${Date.now()}`,
+              params: {}
+            });
+          }
+          
+          // Handle different response formats
+          const tools = response.tools || response.result?.tools || [];
           
           // Prefix tool names with server name to avoid conflicts
-          const prefixedTools = response.tools.map(tool => ({
+          const prefixedTools = tools.map(tool => ({
             ...tool,
             name: `${serverName}:${tool.name}`,
             description: `[${serverName}] ${tool.description || ''}`
@@ -155,18 +225,34 @@ class MCPProxyServer {
       }
       
       try {
-        const response = await mcpServer.server.request(
-          {
+        let response;
+        
+        if (mcpServer.type === 'STDIO') {
+          response = await mcpServer.server.request(
+            {
+              method: 'tools/call',
+              params: {
+                name: actualToolName,
+                arguments: toolArgs
+              }
+            },
+            CallToolRequestSchema
+          );
+        } else {
+          // HTTP/SSE servers
+          response = await mcpServer.server.request({
+            jsonrpc: '2.0',
             method: 'tools/call',
+            id: `call-${Date.now()}`,
             params: {
               name: actualToolName,
               arguments: toolArgs
             }
-          },
-          CallToolRequestSchema
-        );
+          });
+        }
         
-        return response;
+        // Normalize response format
+        return response.result ? response : { content: response };
       } catch (error) {
         console.error(`Error calling tool ${actualToolName} on server ${serverName}:`, error);
         throw error;

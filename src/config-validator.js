@@ -49,21 +49,46 @@ export class ConfigValidator {
       errors.push(`${prefix}: Missing or invalid name`);
     }
     
-    if (!server.command || typeof server.command !== 'string') {
-      errors.push(`${prefix}: Missing or invalid command`);
+    // Validate server name format (no colons allowed as they're used for routing)
+    if (server.name && server.name.includes(':')) {
+      errors.push(`${prefix}: Server name cannot contain colons (:)`);
     }
     
-    if (server.args && !Array.isArray(server.args)) {
-      errors.push(`${prefix}: args must be an array`);
+    // Validate based on server type
+    const type = server.type || 'STDIO';
+    const validTypes = ['STDIO', 'SSE', 'STREAMABLE_HTTP'];
+    
+    if (!validTypes.includes(type)) {
+      errors.push(`${prefix}: Invalid type "${type}". Must be one of: ${validTypes.join(', ')}`);
+    }
+    
+    if (type === 'STDIO') {
+      // STDIO servers need command and args
+      if (!server.command || typeof server.command !== 'string') {
+        errors.push(`${prefix}: Missing or invalid command for STDIO server`);
+      }
+      
+      if (server.args && !Array.isArray(server.args)) {
+        errors.push(`${prefix}: args must be an array for STDIO server`);
+      }
+    } else if (type === 'SSE' || type === 'STREAMABLE_HTTP') {
+      // HTTP/SSE servers need URL
+      if (!server.url || typeof server.url !== 'string') {
+        errors.push(`${prefix}: Missing or invalid url for ${type} server`);
+      }
+      
+      // Validate URL format
+      if (server.url) {
+        try {
+          new URL(server.url);
+        } catch {
+          errors.push(`${prefix}: Invalid URL format for ${type} server`);
+        }
+      }
     }
     
     if (server.env && typeof server.env !== 'object') {
       errors.push(`${prefix}: env must be an object`);
-    }
-    
-    // Validate server name format (no colons allowed as they're used for routing)
-    if (server.name && server.name.includes(':')) {
-      errors.push(`${prefix}: Server name cannot contain colons (:)`);
     }
     
     return errors;

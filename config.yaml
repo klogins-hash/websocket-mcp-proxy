@@ -118,6 +118,35 @@ servers:
       OPENMEMORY_API_KEY: "${OPENMEMORY_API_KEY}"
     description: "OpenMemory knowledge management system"
 
+  # === HTTP/SSE SERVERS ===
+  
+  # Pipedream MCP Cloud (SSE)
+  - name: "pipedream"
+    type: "SSE"
+    url: "${PIPEDREAM_MCP_URL}"
+    description: "Pipedream cloud automation platform with Server-Sent Events"
+    
+  # Postman API Server (STREAMABLE_HTTP)
+  - name: "postman"
+    type: "STREAMABLE_HTTP"
+    url: "${POSTMAN_MCP_URL}"
+    bearerToken: "${POSTMAN_BEARER_TOKEN}"
+    description: "Postman API testing and development platform"
+    
+  # MC3 Server Endpoint (STREAMABLE_HTTP)
+  - name: "mc3-server"
+    type: "STREAMABLE_HTTP"
+    url: "${MC3_SERVER_URL}"
+    bearerToken: "${MC3_BEARER_TOKEN}"
+    description: "Auto-generated MCP server for MC3 endpoint"
+    
+  # Rube Workflow Platform (STREAMABLE_HTTP)
+  - name: "rube"
+    type: "STREAMABLE_HTTP"
+    url: "${RUBE_MCP_URL}"
+    bearerToken: "${RUBE_BEARER_TOKEN}"
+    description: "Rube workflow automation platform"
+
 # Logging configuration
 logging:
   level: "info"
