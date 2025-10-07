@@ -123,46 +123,71 @@ class MCPProxyServer {
   async startHttpServer(serverConfig) {
     const { name } = serverConfig;
     
-    const transport = new HttpTransport(serverConfig);
-    await transport.connect();
+    try {
+      const transport = new HttpTransport(serverConfig);
+      await transport.connect();
 
-    // Create a proxy server that handles HTTP/SSE communication
-    const server = {
-      name: `proxy-${name}`,
-      type: serverConfig.type,
-      transport,
-      
-      async request(request) {
-        return await transport.send(request);
-      }
-    };
+      // Create a proxy server that handles HTTP/SSE communication
+      const server = {
+        name: `proxy-${name}`,
+        type: serverConfig.type,
+        transport,
+        
+        async request(request) {
+          try {
+            return await transport.send(request);
+          } catch (error) {
+            console.error(`Request failed for ${name}:`, error.message);
+            throw new Error(`Server ${name} is unavailable: ${error.message}`);
+          }
+        }
+      };
 
-    this.mcpServers.set(name, {
-      server,
-      transport,
-      config: serverConfig,
-      type: serverConfig.type
-    });
+      this.mcpServers.set(name, {
+        server,
+        transport,
+        config: serverConfig,
+        type: serverConfig.type
+      });
 
-    transport.on('error', (error) => {
-      console.error(`HTTP transport error for ${name}:`, error);
-    });
+      transport.on('error', (error) => {
+        console.warn(`HTTP transport error for ${name}:`, error.message);
+      });
 
-    transport.on('disconnect', () => {
-      console.log(`HTTP server ${name} disconnected`);
-      this.mcpServers.delete(name);
-    });
+      transport.on('disconnect', () => {
+        console.log(`HTTP server ${name} disconnected`);
+        this.mcpServers.delete(name);
+      });
 
-    return server;
+      return server;
+    } catch (error) {
+      console.warn(`Failed to start HTTP server ${name}, skipping:`, error.message);
+      // Return a dummy server that reports unavailability
+      return {
+        name: `proxy-${name}`,
+        type: serverConfig.type,
+        async request() {
+          throw new Error(`Server ${name} is unavailable`);
+        }
+      };
+    }
   }
 
   async initializeMCPServers() {
-    const promises = this.config.servers.map(serverConfig => 
-      this.startMCPServer(serverConfig)
-    );
+    const promises = this.config.servers.map(async (serverConfig) => {
+      try {
+        return await this.startMCPServer(serverConfig);
+      } catch (error) {
+        console.warn(`Failed to initialize server ${serverConfig.name}:`, error.message);
+        return null;
+      }
+    });
     
-    await Promise.all(promises);
-    console.log(`Initialized ${this.mcpServers.size} MCP servers`);
+    const results = await Promise.allSettled(promises);
+    const successful = results.filter(r => r.status === 'fulfilled' && r.value !== null).length;
+    
+    console.log(`Initialized ${successful}/${this.config.servers.length} MCP servers`);
+    console.log(`Active servers: ${Array.from(this.mcpServers.keys()).join(', ')}`);
   }
 
   setupHandlers() {

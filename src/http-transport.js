@@ -58,9 +58,10 @@ export class HttpTransport extends EventEmitter {
       this.emit('connect');
       console.log(`[HTTP Transport] Connected to ${this.config.name} (${this.config.type})`);
     } catch (error) {
-      console.error(`[HTTP Transport] Failed to connect to ${this.config.name}:`, error);
-      this.emit('error', error);
-      throw error;
+      console.warn(`[HTTP Transport] Failed to connect to ${this.config.name}:`, error.message);
+      // Mark as connected anyway - we'll handle errors per request
+      this.connected = true;
+      this.emit('connect');
     }
   }
 
@@ -96,9 +97,13 @@ export class HttpTransport extends EventEmitter {
   async connectHTTP() {
     // For STREAMABLE_HTTP, we test the connection with a ping/health check
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+      
       const response = await fetch(this.url, {
         method: 'POST',
         headers: this.headers,
+        signal: controller.signal,
         body: JSON.stringify({
           jsonrpc: '2.0',
           method: 'initialize',
@@ -117,12 +122,17 @@ export class HttpTransport extends EventEmitter {
         })
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       console.log(`[HTTP] Connected to ${this.config.name}`);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error(`Connection timeout to ${this.config.name}`);
+      }
       console.error(`[HTTP] Failed to connect to ${this.config.name}:`, error);
       throw error;
     }
