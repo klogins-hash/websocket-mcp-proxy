@@ -3,45 +3,25 @@
 # Proxy server settings
 proxy:
   port: 8080
-  host: "localhost"
+  host: "0.0.0.0"
 
 # MCP servers to host and proxy
 servers:
-  # Example: File system MCP server
+  # Example: Memory MCP server (works without external dependencies)
+  - name: "memory"
+    command: "npx"
+    args: ["@modelcontextprotocol/server-memory"]
+    env:
+      NODE_ENV: "production"
+    description: "In-memory storage server"
+    
+  # Example: File system MCP server (using /tmp for demo)
   - name: "filesystem"
     command: "npx"
-    args: ["@modelcontextprotocol/server-filesystem", "/path/to/allowed/directory"]
+    args: ["@modelcontextprotocol/server-filesystem", "/tmp"]
     env:
       NODE_ENV: "production"
     description: "File system operations server"
-    
-  # Example: Git MCP server
-  - name: "git"
-    command: "npx"
-    args: ["@modelcontextprotocol/server-git", "--repository", "/path/to/git/repo"]
-    description: "Git operations server"
-    
-  # Example: SQLite MCP server
-  - name: "sqlite"
-    command: "npx"
-    args: ["@modelcontextprotocol/server-sqlite", "--db-path", "/path/to/database.db"]
-    description: "SQLite database server"
-    
-  # Example: Custom Python MCP server
-  - name: "custom-python"
-    command: "python"
-    args: ["-m", "my_custom_mcp_server"]
-    env:
-      PYTHONPATH: "/path/to/custom/server"
-    description: "Custom Python MCP server"
-    
-  # Example: Web search MCP server
-  - name: "web-search"
-    command: "npx"
-    args: ["@modelcontextprotocol/server-brave-search"]
-    env:
-      BRAVE_API_KEY: "${BRAVE_API_KEY}"
-    description: "Web search capabilities"
 
 # Logging configuration
 logging:
